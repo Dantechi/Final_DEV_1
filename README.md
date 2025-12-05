@@ -15,3 +15,5 @@ o sea solo te espero si ? esta dificil aca
 
 
 pablo no me deja hacer push, me dice que es un error, que hago, siempre que yo haga cambios o tu me avisas, por que hay que hacer pull
+
+PABLOOOOO, listo , pude hacer commit, revisa en modelos ahi esta lo de jugador, ayudame conm estadicticas y partido, pero primero debes traer cambios, haces git pull para traer cambios 
