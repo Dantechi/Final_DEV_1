@@ -29,3 +29,5 @@ Hola pablo, estoy intentando avanzar en todo, ya te hago commit de lo que haga, 
 
 hellen yo digo que vayamos hasta el docs de fastapio y dejamos de ultimas el html para que no nos enredemos estoy en ello pero el git es una basura aun no se bine porque hago e l push y me dice que haga pull y etc....
 no hagas pull, no he hecho cambios, entonvces tranquilo, y el push ya te dejo, estas en visual? o pycharm 
+
+estoy en visual 
