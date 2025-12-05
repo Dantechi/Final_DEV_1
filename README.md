@@ -21,3 +21,6 @@ voy intentando crear endpoints a ver como nos va
 
 me puedes explicar lograste hacer el push he intentaod pero no me deja estoy en visual
 hellen ahi hice el main revisalo voy a hacer jugadores 
+
+
+como vas hellen hablame
