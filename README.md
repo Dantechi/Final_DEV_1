@@ -34,3 +34,5 @@ estoy en visual
 
 
 dale no te preocupes, si te funciona por visual re bien, y dale hagamos documentacion de fastapi y luego html 
+
+es que la estamos cagando porque estamos hablancon readme y cada que mandamos un commit toca actualiazrlo en tonces tenemos que encontrar otra forma de hablarnos o tener eso en ceunta 
