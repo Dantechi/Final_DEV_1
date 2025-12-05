@@ -18,3 +18,5 @@ pablo no me deja hacer push, me dice que es un error, que hago, siempre que yo h
 
 PABLOOOOO, listo , pude hacer commit, revisa en modelos ahi esta lo de jugador, ayudame conm estadicticas y partido, pero primero debes traer cambios, haces git pull para traer cambios 
 voy intentando crear endpoints a ver como nos va 
+
+me puedes explicar lograste hacer el push he intentaod pero no me deja estoy en visual
