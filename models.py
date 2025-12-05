@@ -1,6 +1,3 @@
-models.py
-
-
 # models.py
 from typing import Optional, List
 from datetime import date, datetime
@@ -8,30 +5,18 @@ from enum import Enum
 
 from sqlmodel import SQLModel, Field, Relationship
 
+# Importamos tus enums reales
+from utils.positions import Position
+from utils.states import States
+
 
 # =========================
-# ENUMS
+# ENUM resultado del partido
 # =========================
-
-class PosicionEnum(str, Enum):
-    portero = "Portero"
-    defensa_central = "Defensa Central"
-    lateral = "Lateral"
-    mediocampista = "Mediocampista"
-    extremo = "Extremo"
-    delantero = "Delantero"
-
-
-class EstadoJugadorEnum(str, Enum):
-    activo = "Activo"
-    lesionado = "Lesionado"
-    suspendido = "Suspendido"
-
-
 class ResultadoEnum(str, Enum):
-    victoria = "Victoria"
-    empate = "Empate"
-    derrota = "Derrota"
+    VICTORIA = "VICTORIA"
+    EMPATE = "EMPATE"
+    DERROTA = "DERROTA"
 
 
 # =========================
@@ -45,11 +30,13 @@ class JugadorBase(SQLModel):
     estatura_cm: int = Field(ge=140, le=220)
     peso_kg: float = Field(ge=40, le=150)
     nacionalidad: str
-    posicion: PosicionEnum
-    estado: EstadoJugadorEnum = EstadoJugadorEnum.activo
 
-    # Información de contrato
-    contrato: Optional[str] = None    # compra / préstamo / cantera
+    # ENUMS actualizados
+    posicion: Position
+    estado: States = States.ACTIVO
+
+    # Información adicional
+    contrato: Optional[str] = None
     club_previo: Optional[str] = None
     valor_mercado_usd: Optional[float] = Field(default=0, ge=0)
 
@@ -60,7 +47,6 @@ class Jugador(JugadorBase, table=True):
     actualizado_en: datetime = Field(default_factory=datetime.utcnow)
     eliminado: bool = Field(default=False)
 
-    # Relación 1---N con EstadísticaJugador
     estadisticas: List["EstadisticaJugador"] = Relationship(back_populates="jugador")
 
 
@@ -81,8 +67,8 @@ class JugadorUpdate(SQLModel):
     estatura_cm: Optional[int] = None
     peso_kg: Optional[float] = None
     nacionalidad: Optional[str] = None
-    posicion: Optional[PosicionEnum] = None
-    estado: Optional[EstadoJugadorEnum] = None
+    posicion: Optional[Position] = None
+    estado: Optional[States] = None
     contrato: Optional[str] = None
     club_previo: Optional[str] = None
     valor_mercado_usd: Optional[float] = None
@@ -106,7 +92,6 @@ class Partido(PartidoBase, table=True):
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime = Field(default_factory=datetime.utcnow)
 
-    # Relación 1---N
     estadisticas: List["EstadisticaJugador"] = Relationship(back_populates="partido")
 
 
@@ -135,12 +120,12 @@ class PartidoUpdate(SQLModel):
 
 class EstadisticaBase(SQLModel):
     minutos_jugados: int = Field(ge=0, le=120)
-    goles: int = Field(default=0, ge=0)
+    gols: int = Field(default=0, ge=0)
     asistencias: int = Field(default=0, ge=0)
     faltas: int = Field(default=0, ge=0)
     tarjetas_amarillas: int = Field(default=0, ge=0)
     tarjetas_rojas: int = Field(default=0, ge=0)
-    goles_recibidos: Optional[int] = Field(default=None, ge=0)  # para porteros / defensas
+    goles_recibidos: Optional[int] = Field(default=None, ge=0)
 
 
 class EstadisticaJugador(EstadisticaBase, table=True):
@@ -152,8 +137,8 @@ class EstadisticaJugador(EstadisticaBase, table=True):
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime = Field(default_factory=datetime.utcnow)
 
-    jugador: Optional[Jugador] = Relationship(back_populates="estadisticas")
-    partido: Optional[Partido] = Relationship(back_populates="estadisticas")
+    jugador: Optional["Jugador"] = Relationship(back_populates="estadisticas")
+    partido: Optional["Partido"] = Relationship(back_populates="estadisticas")
 
 
 class EstadisticaCreate(EstadisticaBase):
@@ -171,7 +156,7 @@ class EstadisticaRead(EstadisticaBase):
 
 class EstadisticaUpdate(SQLModel):
     minutos_jugados: Optional[int] = None
-    goles: Optional[int] = None
+    gols: Optional[int] = None
     asistencias: Optional[int] = None
     faltas: Optional[int] = None
     tarjetas_amarillas: Optional[int] = None
