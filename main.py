@@ -5,24 +5,16 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
-
-# Routers (asume que crearás estos módulos: jugadores.py, partidos.py, estadisticas.py, upload.py)
-from routers import jugadores, partidos
-import estadisticas
-import upload
-
-from db import create_tables, SessionDep
-from models import Jugador  # importados solo si quieres usarlos en endpoints rápidos / tests
+from routers import jugadores, partidos, estadisticas
+from db import create_db_and_tables, get_session, SessionDep
+from models import Jugador
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan para tareas de arranque y cierre.
-    Aquí creamos las tablas en la BD (Clever Cloud / PostgreSQL) si no existen.
-    """
-    await create_tables()
+
+    await create_db_and_tables()
     yield
-    # si necesitas tareas al apagar la app, las pones aquí
+
 
 
 app = FastAPI(
@@ -45,7 +37,6 @@ app.add_middleware(
 app.include_router(jugadores.router)
 app.include_router(partidos.router)
 app.include_router(estadisticas.router)
-app.include_router(upload.router)
 
 # Endpoint raíz (API)
 @app.get("/", tags=["api"])
@@ -78,7 +69,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         },
     )
 
-# (Opcional) Endpoints de administración rápida para debug (ejemplo que usa SessionDep)
+
+
 @app.get("/api/ref/resumen", tags=["api"])
 async def resumen_refugios(session: SessionDep):
     """
@@ -90,4 +82,3 @@ async def resumen_refugios(session: SessionDep):
 
 # Para ejecutar con uvicorn:
 # uvicorn main:app --reload
-fffffff
