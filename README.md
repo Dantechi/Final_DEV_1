@@ -1,2 +1,5 @@
 hellen como vamos a hacer
 para enviarnos esto en pycharm o visual ?
+
+
+Hola pablo, estoy creando los modelos, estoy definiedno lo que pide cada modelo, ya termino y me ayudas con la creacion de enpoints, ve mirando que mas toca implementar en los enpoints para cada modelo, tenemos tres modelos: Jugador, estadistica, partido, ya cuando termine, hago commit para que veas los cambios 
