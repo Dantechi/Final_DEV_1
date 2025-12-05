@@ -8,7 +8,7 @@ class Jugador():
     pie_dominante:str  #izq o derecho
     posicion: str #posicion o rol. delantero y todo eso
     valor_jugador: int # aqui no se si es el valor monetario
-    año_club: int
+    año_club: int  # se debe calcular cuantos años lleva en el club
     estado_activo: bool # si esta activo es por que sigue siendo parte del club
     estado_suspendido: bool # si recibe amonestacion esta en estado suspendido
 
