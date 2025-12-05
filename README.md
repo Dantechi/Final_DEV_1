@@ -31,3 +31,6 @@ hellen yo digo que vayamos hasta el docs de fastapio y dejamos de ultimas el htm
 no hagas pull, no he hecho cambios, entonvces tranquilo, y el push ya te dejo, estas en visual? o pycharm 
 
 estoy en visual 
+
+
+dale no te preocupes, si te funciona por visual re bien, y dale hagamos documentacion de fastapi y luego html 
