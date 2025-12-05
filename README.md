@@ -8,3 +8,6 @@ o sea espero a que los hagas y me los mandas o como asi ?
 
 
 si, dame un momento igual el codigo lo estoy comentariando para que no te pierdas 
+
+
+aaa listo te espero en tonces estas en pychar o visual y una pregunta yo clono el repo pero como hago los add . commit y que queden registrados en el fork que clonamos 
