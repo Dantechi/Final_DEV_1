@@ -36,3 +36,6 @@ estoy en visual
 dale no te preocupes, si te funciona por visual re bien, y dale hagamos documentacion de fastapi y luego html 
 
 es que la estamos cagando porque estamos hablancon readme y cada que mandamos un commit toca actualiazrlo en tonces tenemos que encontrar otra forma de hablarnos o tener eso en ceunta 
+
+
+si si tienes razon, sabes, hagamos otro repo, y pos ahi hablamos por el reamde, es que no se me ocurre por donde mas, aparte no me avisaste los cambios que habias hecho, yo genere cambio pero no se si se aplicaron, ya te envie la invitacion al nuevo repo 
