@@ -1,137 +1,130 @@
-# jugadores.py
-from fastapi import APIRouter, HTTPException
-from sqlmodel import select
+# routers/jugadores.py
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi.templating import Jinja2Templates
+from sqlmodel import Session, select
 
-from db import SessionDep
-from models import (
-    Jugador,
-    JugadorCreate,
-    JugadorRead,
-    JugadorUpdate,
-    PosicionEnum,
-    EstadoJugadorEnum,
-)
-
+from models import Jugador, Positions, States
+from db import get_session
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
 
-# =============================
-# Crear jugador
-# =============================
-@router.post("/", response_model=JugadorRead)
-async def crear_jugador(jugador: JugadorCreate, session: SessionDep):
+@router.get("/")
+def lista_jugadores(request: Request, session: Session = Depends(get_session)):
+    jugadores = session.exec(select(Jugador)).all()
+    return TemplateResponse("jugadores/lista.html", {"request": request, "jugadores": jugadores})
 
-    # Verificar número duplicado
-    stmt = select(Jugador).where(
-        Jugador.numero == jugador.numero,
-        Jugador.eliminado == False
+
+@router.get("/crear")
+def crear_jugador_form(request: Request):
+    return TemplateResponse(
+        "jugadores/crear.html",
+        {"request": request, "posiciones": list(Positions), "estados": list(States)}
     )
-    result = await session.exec(stmt)
-    existe = result.first()
-
-    if existe:
-        raise HTTPException(
-            status_code=400,
-            detail=f"El número {jugador.numero} ya está asignado a otro jugador."
-        )
-
-    nuevo = Jugador.model_validate(jugador)
-    session.add(nuevo)
-    await session.commit()
-    await session.refresh(nuevo)
-    return nuevo
 
 
-# =============================
-# Listar jugadores (con filtros)
-# =============================
-@router.get("/", response_model=list[JugadorRead])
-async def listar_jugadores(
-    session: SessionDep,
-    nombre: str | None = None,
-    posicion: PosicionEnum | None = None,
-    estado: EstadoJugadorEnum | None = None,
-    nacionalidad: str | None = None,
-    club_previo: str | None = None,
+@router.post("/crear")
+def crear_jugador(
+    request: Request,
+    nombre: str = Form(...),
+    numero_camiseta: int = Form(...),
+    fecha_nacimiento: str = Form(...),
+    nacionalidad: str = Form(...),
+    altura_cm: int = Form(...),
+    peso_kg: int = Form(...),
+    pie_dominante: str = Form(...),
+    posicion: Positions = Form(...),
+    session: Session = Depends(get_session)
 ):
-    stmt = select(Jugador).where(Jugador.eliminado == False)
 
-    if nombre:
-        stmt = stmt.where(Jugador.nombre.ilike(f"%{nombre}%"))
-    if posicion:
-        stmt = stmt.where(Jugador.posicion == posicion)
-    if estado:
-        stmt = stmt.where(Jugador.estado == estado)
-    if nacionalidad:
-        stmt = stmt.where(Jugador.nacionalidad.ilike(f"%{nacionalidad}%"))
-    if club_previo:
-        stmt = stmt.where(Jugador.club_previo.ilike(f"%{club_previo}%"))
+    # Validación de camiseta única
+    existente = session.exec(
+        select(Jugador).where(Jugador.numero_camiseta == numero_camiseta)
+    ).first()
 
-    result = await session.exec(stmt)
-    return result.all()
+    if existente:
+        raise HTTPException(400, "Número de camiseta duplicado")
 
-
-# =============================
-# Obtener jugador por ID
-# =============================
-@router.get("/{jugador_id}", response_model=JugadorRead)
-async def obtener_jugador(jugador_id: int, session: SessionDep):
-    jugador = await session.get(Jugador, jugador_id)
-    if not jugador or jugador.eliminado:
-        raise HTTPException(status_code=404, detail="Jugador no encontrado")
-    return jugador
-
-
-# =============================
-# Actualizar jugador
-# =============================
-@router.patch("/{jugador_id}", response_model=JugadorRead)
-async def actualizar_jugador(
-    jugador_id: int,
-    cambios: JugadorUpdate,
-    session: SessionDep
-):
-    jugador = await session.get(Jugador, jugador_id)
-    if not jugador or jugador.eliminado:
-        raise HTTPException(status_code=404, detail="Jugador no encontrado")
-
-    for campo, valor in cambios.model_dump(exclude_unset=True).items():
-        setattr(jugador, campo, valor)
-
+    jugador = Jugador(
+        nombre=nombre,
+        numero_camiseta=numero_camiseta,
+        fecha_nacimiento=fecha_nacimiento,
+        nacionalidad=nacionalidad,
+        altura_cm=altura_cm,
+        peso_kg=peso_kg,
+        pie_dominante=pie_dominante,
+        posicion=posicion,
+    )
     session.add(jugador)
-    await session.commit()
-    await session.refresh(jugador)
-    return jugador
+    session.commit()
+
+    return RedirectResponse("/jugadores", status_code=302)
 
 
-# =============================
-# Borrado lógico (soft delete)
-# =============================
-@router.delete("/{jugador_id}")
-async def eliminar_jugador(jugador_id: int, session: SessionDep):
-    jugador = await session.get(Jugador, jugador_id)
-    if not jugador or jugador.eliminado:
-        raise HTTPException(status_code=404, detail="Jugador no encontrado")
-
-    jugador.eliminado = True
-    session.add(jugador)
-    await session.commit()
-
-    return {"message": "Jugador eliminado correctamente"}
-
-
-# =============================
-# Restaurar jugador eliminado
-# =============================
-@router.post("/{jugador_id}/restaurar")
-async def restaurar_jugador(jugador_id: int, session: SessionDep):
-    jugador = await session.get(Jugador, jugador_id)
+@router.get("/detalle/{jugador_id}")
+def detalle_jugador(jugador_id: int, request: Request, session: Session = Depends(get_session)):
+    jugador = session.get(Jugador, jugador_id)
     if not jugador:
-        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+        raise HTTPException(404, "Jugador no encontrado")
 
-    jugador.eliminado = False
+    total_goles = sum(e.goles for e in jugador.estadisticas)
+    total_partidos = len(jugador.estadisticas)
+    promedio_goles = total_goles / total_partidos if total_partidos else 0
+
+    return TemplateResponse(
+        "jugadores/detalle.html",
+        {
+            "request": request,
+            "jugador": jugador,
+            "total_goles": total_goles,
+            "total_partidos": total_partidos,
+            "promedio_goles": promedio_goles,
+        }
+    )
+
+
+@router.get("/editar/{jugador_id}")
+def editar_form(jugador_id: int, request: Request, session: Session = Depends(get_session)):
+    jugador = session.get(Jugador, jugador_id)
+    if not jugador:
+        raise HTTPException(404, "Jugador no encontrado")
+
+    return TemplateResponse(
+        "jugadores/editar.html",
+        {"request": request, "jugador": jugador, "posiciones": list(Positions), "estados": list(States)}
+    )
+
+
+@router.post("/editar/{jugador_id}")
+def editar_jugador(
+    jugador_id: int,
+    request: Request,
+    nombre: str = Form(...),
+    numero_camiseta: int = Form(...),
+    fecha_nacimiento: str = Form(...),
+    nacionalidad: str = Form(...),
+    altura_cm: int = Form(...),
+    peso_kg: int = Form(...),
+    pie_dominante: str = Form(...),
+    posicion: Positions = Form(...),
+    estado: States = Form(...),
+    session: Session = Depends(get_session)
+):
+    jugador = session.get(Jugador, jugador_id)
+    if not jugador:
+        raise HTTPException(404, "Jugador no encontrado")
+
+    jugador.nombre = nombre
+    jugador.numero_camiseta = numero_camiseta
+    jugador.fecha_nacimiento = fecha_nacimiento
+    jugador.nacionalidad = nacionalidad
+    jugador.altura_cm = altura_cm
+    jugador.peso_kg = peso_kg
+    jugador.pie_dominante = pie_dominante
+    jugador.posicion = posicion
+    jugador.estado = estado
+
     session.add(jugador)
-    await session.commit()
+    session.commit()
 
-    return {"message": "Jugador restaurado correctamente"}
+    return RedirectResponse(f"/jugadores/detalle/{jugador_id}", status_code=302)

@@ -1,8 +1,9 @@
-from sqlmodel import SQLModel, Session, create_engine, SessionDep
+# database.py
+from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "sqlite:///./sistema_futbol.db"
+DATABASE_URL = "sqlite:///./futbol.db"
 
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(DATABASE_URL, echo=True)
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -10,5 +11,3 @@ def create_db_and_tables():
 def get_session():
     with Session(engine) as session:
         yield session
-class SessionDep:
-    pass
