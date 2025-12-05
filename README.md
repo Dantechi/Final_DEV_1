@@ -21,3 +21,18 @@ voy intentando crear endpoints a ver como nos va
 
 me puedes explicar lograste hacer el push he intentaod pero no me deja estoy en visual
 hellen ahi hice el main revisalo voy a hacer jugadores 
+
+
+como vas hellen hablame
+
+Hola pablo, estoy intentando avanzar en todo, ya te hago commit de lo que haga, vi que avanzaste en main, pero por que borraste models. 
+
+hellen yo digo que vayamos hasta el docs de fastapio y dejamos de ultimas el html para que no nos enredemos estoy en ello pero el git es una basura aun no se bine porque hago e l push y me dice que haga pull y etc....
+no hagas pull, no he hecho cambios, entonvces tranquilo, y el push ya te dejo, estas en visual? o pycharm 
+
+estoy en visual 
+
+
+dale no te preocupes, si te funciona por visual re bien, y dale hagamos documentacion de fastapi y luego html 
+
+es que la estamos cagando porque estamos hablancon readme y cada que mandamos un commit toca actualiazrlo en tonces tenemos que encontrar otra forma de hablarnos o tener eso en ceunta 
