@@ -1,13 +1,95 @@
-from fastapi import FastAPI
+# main.py
+from contextlib import asynccontextmanager
+from typing import Optional
 
-app = FastAPI(title="sigmotoa FC")
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import select
+
+# Routers (asume que crearás estos módulos: jugadores.py, partidos.py, estadisticas.py, upload.py)
+import jugadores
+import partidos
+import estadisticas
+import upload
+
+from db import create_tables, SessionDep
+from models import Jugador, Partido  # importados solo si quieres usarlos en endpoints rápidos / tests
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan para tareas de arranque y cierre.
+    Aquí creamos las tablas en la BD (Clever Cloud / PostgreSQL) si no existen.
+    """
+    await create_tables()
+    yield
+    # si necesitas tareas al apagar la app, las pones aquí
 
 
-@app.get("/")
+app = FastAPI(
+    lifespan=lifespan,
+    title="Sigmotoa FC API",
+    version="1.0.0",
+    description="API REST para gestionar jugadores, partidos y estadísticas de Sigmotoa FC",
+)
+
+# CORS (útil durante desarrollo; ajustar orígenes en producción)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cambia esto en producción
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Routers de la API (JSON)
+app.include_router(jugadores.router)
+app.include_router(partidos.router)
+app.include_router(estadisticas.router)
+app.include_router(upload.router)
+
+# Endpoint raíz (API)
+@app.get("/", tags=["api"])
 async def root():
-    return {"message": "sigmotoa FC data"}
+    return {
+        "app": "Sigmotoa FC API",
+        "version": "1.0.0",
+        "description": "API para gestionar jugadores, partidos y estadísticas. Revisa /docs para la documentación OpenAPI."
+    }
 
+# Ejemplo de endpoint para debug / sanity (opcional)
+@app.get("/health", tags=["api"])
+async def health():
+    return {"status": "ok"}
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Bienvenido a sigmotoa FC {name}"}
+# Manejo global de HTTPException para devolver JSON con detalle (comportamiento parecido al ejemplo HTML)
+from fastapi import HTTPException
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """
+    Devuelve un JSON consistente para errores HTTP.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "status_code": exc.status_code,
+            "path": str(request.url.path)
+        },
+    )
+
+# (Opcional) Endpoints de administración rápida para debug (ejemplo que usa SessionDep)
+@app.get("/api/ref/resumen", tags=["api"])
+async def resumen_refugios(session: SessionDep):
+    """
+    Endpoint de ejemplo que muestra un resumen simple - se puede eliminar luego.
+    """
+    result = await session.exec(select(Jugador))
+    jugadores = result.all()
+    return {"total_jugadores": len(jugadores)}
+
+# Para ejecutar con uvicorn:
+# uvicorn main:app --reload
+fffffff
