@@ -1,6 +1,5 @@
 # main.py
 from contextlib import asynccontextmanager
-from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -8,13 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
 
 # Routers (asume que crearás estos módulos: jugadores.py, partidos.py, estadisticas.py, upload.py)
-import jugadores
-import partidos
+from routers import jugadores, partidos
 import estadisticas
 import upload
 
 from db import create_tables, SessionDep
-from models import Jugador, Partido  # importados solo si quieres usarlos en endpoints rápidos / tests
+from models import Jugador  # importados solo si quieres usarlos en endpoints rápidos / tests
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

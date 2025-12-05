@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
-from database import get_session
+from db import get_session
 from models import Estadistica, Jugador, Partido
 
 router = APIRouter(prefix="/estadisticas", tags=["Estadisticas"])

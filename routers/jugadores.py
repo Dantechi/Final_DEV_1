@@ -1,63 +1,137 @@
-from fastapi import APIRouter, Depends, HTTPException, Form
-from sqlmodel import Session, select
-from database import get_session
-from models import Jugador
-from enums.states import States
-from enums.positions import Position
-from fastapi.templating import Jinja2Templates
-from fastapi import Request
-from fastapi.responses import RedirectResponse
+# jugadores.py
+from fastapi import APIRouter, HTTPException
+from sqlmodel import select
+
+from db import SessionDep
+from models import (
+    Jugador,
+    JugadorCreate,
+    JugadorRead,
+    JugadorUpdate,
+    PosicionEnum,
+    EstadoJugadorEnum,
+)
+
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
-templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/")
-def lista_jugadores(request: Request, session: Session = Depends(get_session)):
-    jugadores = session.exec(select(Jugador)).all()
-    return templates.TemplateResponse("jugadores/lista.html", {"request": request, "jugadores": jugadores})
+# =============================
+# Crear jugador
+# =============================
+@router.post("/", response_model=JugadorRead)
+async def crear_jugador(jugador: JugadorCreate, session: SessionDep):
 
-
-@router.get("/crear")
-def formulario_crear(request: Request):
-    return templates.TemplateResponse("jugadores/crear.html", {
-        "request": request,
-        "positions": list(Position),
-        "states": list(States)
-    })
-
-
-@router.post("/crear")
-def crear_jugador(
-    request: Request,
-    nombre: str = Form(...),
-    numero_camiseta: int = Form(...),
-    fecha_nacimiento: str = Form(...),
-    nacionalidad: str = Form(...),
-    altura_cm: int = Form(...),
-    peso_kg: int = Form(...),
-    pie_dominante: str = Form(...),
-    posicion: Position = Form(...),
-    valor_jugador: int = Form(...),
-    anio_club: int = Form(...),
-    session: Session = Depends(get_session)
-):
-    existe = session.exec(select(Jugador).where(Jugador.numero_camiseta == numero_camiseta)).first()
-    if existe:
-        raise HTTPException(status_code=400, detail="Número de camiseta duplicado")
-
-    jugador = Jugador(
-        nombre=nombre,
-        numero_camiseta=numero_camiseta,
-        fecha_nacimiento=fecha_nacimiento,
-        nacionalidad=nacionalidad,
-        altura_cm=altura_cm,
-        peso_kg=peso_kg,
-        pie_dominante=pie_dominante,
-        posicion=posicion,
-        valor_jugador=valor_jugador,
-        anio_club=anio_club,
+    # Verificar número duplicado
+    stmt = select(Jugador).where(
+        Jugador.numero == jugador.numero,
+        Jugador.eliminado == False
     )
+    result = await session.exec(stmt)
+    existe = result.first()
+
+    if existe:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El número {jugador.numero} ya está asignado a otro jugador."
+        )
+
+    nuevo = Jugador.model_validate(jugador)
+    session.add(nuevo)
+    await session.commit()
+    await session.refresh(nuevo)
+    return nuevo
+
+
+# =============================
+# Listar jugadores (con filtros)
+# =============================
+@router.get("/", response_model=list[JugadorRead])
+async def listar_jugadores(
+    session: SessionDep,
+    nombre: str | None = None,
+    posicion: PosicionEnum | None = None,
+    estado: EstadoJugadorEnum | None = None,
+    nacionalidad: str | None = None,
+    club_previo: str | None = None,
+):
+    stmt = select(Jugador).where(Jugador.eliminado == False)
+
+    if nombre:
+        stmt = stmt.where(Jugador.nombre.ilike(f"%{nombre}%"))
+    if posicion:
+        stmt = stmt.where(Jugador.posicion == posicion)
+    if estado:
+        stmt = stmt.where(Jugador.estado == estado)
+    if nacionalidad:
+        stmt = stmt.where(Jugador.nacionalidad.ilike(f"%{nacionalidad}%"))
+    if club_previo:
+        stmt = stmt.where(Jugador.club_previo.ilike(f"%{club_previo}%"))
+
+    result = await session.exec(stmt)
+    return result.all()
+
+
+# =============================
+# Obtener jugador por ID
+# =============================
+@router.get("/{jugador_id}", response_model=JugadorRead)
+async def obtener_jugador(jugador_id: int, session: SessionDep):
+    jugador = await session.get(Jugador, jugador_id)
+    if not jugador or jugador.eliminado:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+    return jugador
+
+
+# =============================
+# Actualizar jugador
+# =============================
+@router.patch("/{jugador_id}", response_model=JugadorRead)
+async def actualizar_jugador(
+    jugador_id: int,
+    cambios: JugadorUpdate,
+    session: SessionDep
+):
+    jugador = await session.get(Jugador, jugador_id)
+    if not jugador or jugador.eliminado:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    for campo, valor in cambios.model_dump(exclude_unset=True).items():
+        setattr(jugador, campo, valor)
+
     session.add(jugador)
-    session.commit()
-    return RedirectResponse("/jugadores", status_code=303)
+    await session.commit()
+    await session.refresh(jugador)
+    return jugador
+
+
+# =============================
+# Borrado lógico (soft delete)
+# =============================
+@router.delete("/{jugador_id}")
+async def eliminar_jugador(jugador_id: int, session: SessionDep):
+    jugador = await session.get(Jugador, jugador_id)
+    if not jugador or jugador.eliminado:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    jugador.eliminado = True
+    session.add(jugador)
+    await session.commit()
+
+    return {"message": "Jugador eliminado correctamente"}
+
+
+# =============================
+# Restaurar jugador eliminado
+# =============================
+@router.post("/{jugador_id}/restaurar")
+async def restaurar_jugador(jugador_id: int, session: SessionDep):
+    jugador = await session.get(Jugador, jugador_id)
+    if not jugador:
+        raise HTTPException(status_code=404, detail="Jugador no encontrado")
+
+    jugador.eliminado = False
+    session.add(jugador)
+    await session.commit()
+
+    return {"message": "Jugador restaurado correctamente"}
