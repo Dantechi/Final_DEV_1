@@ -24,3 +24,5 @@ hellen ahi hice el main revisalo voy a hacer jugadores
 
 
 como vas hellen hablame
+
+Hola pablo, estoy intentando avanzar en todo, ya te hago commit de lo que haga, vi que avanzaste en main, pero por que borraste models
