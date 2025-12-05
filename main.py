@@ -92,4 +92,3 @@ async def resumen_refugios(session: SessionDep):
 
 # Para ejecutar con uvicorn:
 # uvicorn main:app --reload
-fffffff
