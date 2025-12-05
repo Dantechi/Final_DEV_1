@@ -1,26 +1,26 @@
-# routers/jugadores.py
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
-
-from models import Jugador, Positions, States
+from models import Jugador, Positions, States, Estadistica
 from db import get_session
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter(prefix="/jugadores", tags=["Jugadores"])
 
+templates = Jinja2Templates(directory="templates")
 
+
+# LISTA DE JUGADORES
 @router.get("/")
 def lista_jugadores(request: Request, session: Session = Depends(get_session)):
     jugadores = session.exec(select(Jugador)).all()
-    return TemplateResponse("jugadores/lista.html", {"request": request, "jugadores": jugadores})
+    return templates.TemplateResponse("jugadores/lista.html", {"request": request, "jugadores": jugadores})
 
 
+# CREAR JUGADOR
 @router.get("/crear")
 def crear_jugador_form(request: Request):
-    return TemplateResponse(
-        "jugadores/crear.html",
-        {"request": request, "posiciones": list(Positions), "estados": list(States)}
-    )
+    return templates.TemplateResponse("jugadores/crear.html", {"request": request, "posiciones": list(Positions), "estados": list(States)})
 
 
 @router.post("/crear")
@@ -36,14 +36,9 @@ def crear_jugador(
     posicion: Positions = Form(...),
     session: Session = Depends(get_session)
 ):
-
-    # Validación de camiseta única
-    existente = session.exec(
-        select(Jugador).where(Jugador.numero_camiseta == numero_camiseta)
-    ).first()
-
-    if existente:
-        raise HTTPException(400, "Número de camiseta duplicado")
+    # Validación número de camiseta
+    if session.exec(select(Jugador).where(Jugador.numero_camiseta == numero_camiseta)).first():
+        raise HTTPException(status_code=400, detail="Número de camiseta duplicado")
 
     jugador = Jugador(
         nombre=nombre,
@@ -53,14 +48,14 @@ def crear_jugador(
         altura_cm=altura_cm,
         peso_kg=peso_kg,
         pie_dominante=pie_dominante,
-        posicion=posicion,
+        posicion=posicion
     )
     session.add(jugador)
     session.commit()
-
     return RedirectResponse("/jugadores", status_code=302)
 
 
+# DETALLE JUGADOR + ESTADISTICAS
 @router.get("/detalle/{jugador_id}")
 def detalle_jugador(jugador_id: int, request: Request, session: Session = Depends(get_session)):
     jugador = session.get(Jugador, jugador_id)
@@ -70,8 +65,10 @@ def detalle_jugador(jugador_id: int, request: Request, session: Session = Depend
     total_goles = sum(e.goles for e in jugador.estadisticas)
     total_partidos = len(jugador.estadisticas)
     promedio_goles = total_goles / total_partidos if total_partidos else 0
+    total_minutos = sum(e.minutos_jugados for e in jugador.estadisticas)
+    total_tarjetas = sum(e.tarjetas_amarillas + e.tarjetas_rojas for e in jugador.estadisticas)
 
-    return TemplateResponse(
+    return templates.TemplateResponse(
         "jugadores/detalle.html",
         {
             "request": request,
@@ -79,17 +76,19 @@ def detalle_jugador(jugador_id: int, request: Request, session: Session = Depend
             "total_goles": total_goles,
             "total_partidos": total_partidos,
             "promedio_goles": promedio_goles,
+            "total_minutos": total_minutos,
+            "total_tarjetas": total_tarjetas
         }
     )
 
 
+# EDITAR JUGADOR
 @router.get("/editar/{jugador_id}")
-def editar_form(jugador_id: int, request: Request, session: Session = Depends(get_session)):
+def editar_jugador_form(jugador_id: int, request: Request, session: Session = Depends(get_session)):
     jugador = session.get(Jugador, jugador_id)
     if not jugador:
         raise HTTPException(404, "Jugador no encontrado")
-
-    return TemplateResponse(
+    return templates.TemplateResponse(
         "jugadores/editar.html",
         {"request": request, "jugador": jugador, "posiciones": list(Positions), "estados": list(States)}
     )
@@ -126,5 +125,4 @@ def editar_jugador(
 
     session.add(jugador)
     session.commit()
-
     return RedirectResponse(f"/jugadores/detalle/{jugador_id}", status_code=302)

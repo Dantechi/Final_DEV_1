@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Fútbol</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        nav a { margin-right: 15px; text-decoration: none; color: blue; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        table, th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        form { margin-top: 10px; }
+        input, select { padding: 5px; margin: 5px 0; width: 100%; }
+        button { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/jugadores">Jugadores</a>
+        <a href="/partidos">Partidos</a>
+        <a href="/estadisticas/crear">Agregar Estadísticas</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html>

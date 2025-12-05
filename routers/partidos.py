@@ -1,23 +1,25 @@
-# routers/partidos.py
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
-
-from models import Partido
+from models import Partido, Estadistica
 from db import get_session
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter(prefix="/partidos", tags=["Partidos"])
+templates = Jinja2Templates(directory="templates")
 
 
+# LISTAR PARTIDOS
 @router.get("/")
 def lista_partidos(request: Request, session: Session = Depends(get_session)):
     partidos = session.exec(select(Partido)).all()
-    return TemplateResponse("partidos/lista.html", {"request": request, "partidos": partidos})
+    return templates.TemplateResponse("partidos/lista.html", {"request": request, "partidos": partidos})
 
 
+# CREAR PARTIDO
 @router.get("/crear")
 def crear_partido_form(request: Request):
-    return TemplateResponse("partidos/crear.html", {"request": request})
+    return templates.TemplateResponse("partidos/crear.html", {"request": request})
 
 
 @router.post("/crear")
@@ -30,7 +32,6 @@ def crear_partido(
     goles_rival: int = Form(...),
     session: Session = Depends(get_session)
 ):
-
     if goles_sigmoto > goles_rival:
         resultado = "Victoria"
     elif goles_sigmoto < goles_rival:
@@ -46,17 +47,18 @@ def crear_partido(
         goles_rival=goles_rival,
         resultado=resultado
     )
-
     session.add(partido)
     session.commit()
-
     return RedirectResponse("/partidos", status_code=302)
 
 
+# DETALLE PARTIDO + ESTADISTICAS
 @router.get("/detalle/{partido_id}")
 def detalle_partido(partido_id: int, request: Request, session: Session = Depends(get_session)):
     partido = session.get(Partido, partido_id)
     if not partido:
         raise HTTPException(404, "Partido no encontrado")
-
-    return TemplateResponse("partidos/detalle.html", {"request": request, "partido": partido})
+    return templates.TemplateResponse(
+        "partidos/detalle.html",
+        {"request": request, "partido": partido, "estadisticas": partido.estadisticas}
+    )
