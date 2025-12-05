@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
 
-# Routers (asume que crearás estos módulos: jugadores.py, partidos.py, estadisticas.py, upload.py)
+
 import jugadores
 import partidos
 import estadisticas
@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     """
     await create_tables()
     yield
-    # si necesitas tareas al apagar la app, las pones aquí
+
 
 
 app = FastAPI(
@@ -34,10 +34,10 @@ app = FastAPI(
     description="API REST para gestionar jugadores, partidos y estadísticas de Sigmotoa FC",
 )
 
-# CORS (útil durante desarrollo; ajustar orígenes en producción)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cambia esto en producción
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,7 +80,6 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         },
     )
 
-# (Opcional) Endpoints de administración rápida para debug (ejemplo que usa SessionDep)
 @app.get("/api/ref/resumen", tags=["api"])
 async def resumen_refugios(session: SessionDep):
     """
